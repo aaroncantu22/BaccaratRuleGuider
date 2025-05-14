@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Baccarat 3rd Card Rule Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Cinzel Decorative', cursive;
+      background-color: #fff176;
+      color: #b71c1c;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 40px;
+    }
+
+    .scoreboard {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin: 30px auto;
+      max-width: 800px;
+      padding: 20px;
+      background: #ffcdd2;
+      border-radius: 15px;
+      border: 3px solid #b71c1c;
+    }
+
+    .score {
+      text-align: center;
+      font-family: 'Cinzel Decorative', cursive;
+    }
+
+    .score .label {
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    .score .value {
+      font-size: 60px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .initial-score {
+      color: #766c6c;
+    }
+
+    .player-score {
+      color: #1565c0;
+    }
+
+    .banker-score {
+      color: #b71c1c;
+    }
+
+    .highlight-winner {
+      background-color: #fff59d;
+      padding: 0 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #ffeb3b;
+      transform: scale(1.05);
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff3e0;
+      padding: 20px;
+      border: 2px solid #b71c1c;
+      border-radius: 10px;
+    }
+
+    .column {
+      display: inline-block;
+      width: 48%;
+      vertical-align: top;
+    }
+
+    .player {
+      color: #1565c0;
+      font-family: 'Cinzel Decorative', cursive;
+    }
+
+    .banker {
+      color: #b71c1c;
+      font-family: 'Cinzel Decorative', cursive;
+    }
+
+    label {
+      display: inline-block;
+      width: 100px;
+      margin: 5px 0;
+    }
+
+    input[type="number"] {
+      width: 50px;
+      margin: 5px;
+      padding: 5px;
+      font-family: 'Cinzel Decorative', cursive;
+    }
+
+    button {
+      margin-top: 20px;
+      margin-right: 10px;
+      background-color: #b71c1c;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: 'Cinzel Decorative', cursive;
+    }
+
+    .result {
+      margin-top: 20px;
+      background: #ffcdd2;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .winner {
+      font-size: 28px;
+      color: #880e4f;
+      margin-top: 10px;
+    }
+
+    .warning {
+      color: #d32f2f;
+      font-size: 16px;
+      font-weight: normal;
+    }
+
+    .decision {
+      margin: 10px 0;
+      padding: 10px;
+      background: #e8f5e9;
+      border-radius: 5px;
+      border-left: 4px solid #2e7d32;
+      color: black;
+      font-family: 'Times New Roman', Times, serif;
+    }
+
+    .decision-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-family: 'Times New Roman', Times, serif;
+    }
+    
+    .decision-content {
+      font-family: 'Times New Roman', Times, serif;
+    }
+    
+    .depends {
+      font-style: italic;
+      color: #795548;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Punto Banco Baccarat</h1>
+
+  <div class="scoreboard">
+    <div class="score player">
+      <div class="label">PLAYER</div>
+      <div id="playerScore" class="value initial-score">0</div>
+    </div>
+    <div class="score banker">
+      <div class="label">BANKER</div>
+      <div id="bankerScore" class="value initial-score">0</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <form id="baccaratForm">
+      <div class="column">
+        <h2 class="player">Player Hand</h2>
+        <label class="player">Total:</label><input type="number" min="0" max="9" id="pTotal" required><br>
+        <label class="player">3rd Card:</label><input type="number" min="0" max="9" id="p3"><br>
+      </div>
+
+      <div class="column">
+        <h2 class="banker">Banker Hand</h2>
+        <label class="banker">Total:</label><input type="number" min="0" max="9" id="bTotal" required><br>
+        <label class="banker">3rd Card:</label><input type="number" min="0" max="9" id="b3"><br>
+      </div>
+
+      <div style="text-align: center;">
+        <button type="submit">Evaluate Hand</button>
+        <button type="button" onclick="resetForm()">Reset</button>
+      </div>
+    </form>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    function updateScores(playerScore, bankerScore, isFinal = false) {
+      const playerScoreEl = document.getElementById("playerScore");
+      const bankerScoreEl = document.getElementById("bankerScore");
+      
+      // Update scores
+      playerScoreEl.textContent = playerScore;
+      bankerScoreEl.textContent = bankerScore;
+      
+      // Update classes
+      playerScoreEl.className = "value " + (isFinal ? "player-score" : "initial-score");
+      bankerScoreEl.className = "value " + (isFinal ? "banker-score" : "initial-score");
+      
+      // Highlight winner if final
+      if (isFinal) {
+        playerScoreEl.classList.remove("highlight-winner");
+        bankerScoreEl.classList.remove("highlight-winner");
+        
+        if (playerScore > bankerScore) {
+          playerScoreEl.classList.add("highlight-winner");
+        } else if (bankerScore > playerScore) {
+          bankerScoreEl.classList.add("highlight-winner");
+        }
+      }
+    }
+
+    document.getElementById("baccaratForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const pTotal = parseInt(document.getElementById("pTotal").value);
+      const p3 = document.getElementById("p3").value;
+      const bTotal = parseInt(document.getElementById("bTotal").value);
+      const b3 = document.getElementById("b3").value;
+
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "";
+
+      // Update initial scores
+      updateScores(pTotal, bTotal);
+
+      // Check for naturals
+      if (pTotal >= 8 || bTotal >= 8) {
+        resultDiv.innerHTML += `<div class="decision">
+          <div class="decision-title">Natural Hand Detected</div>
+          <div class="decision-content">
+            ${pTotal >= 8 ? `<span class="player">Player has natural ${pTotal}</span>` : ''}
+            ${bTotal >= 8 ? `<span class="banker">Banker has natural ${bTotal}</span>` : ''}
+          </div>
+          </div>`;
+        return showFinalResult(pTotal, bTotal);
+      }
+
+      const playerNeedsCard = pTotal <= 5;
+      const playerCardValid = !playerNeedsCard || (playerNeedsCard && p3 !== "");
+
+      const pt3 = p3 === "" ? null : parseInt(p3);
+      
+      // Banker decision logic
+      const bankerNeedsCard = () => {
+        const bt = bTotal;
+
+        if (!playerNeedsCard) {
+          return bt <= 5;
+        }
+        
+        if (bt <= 2) return true;
+        if (bt === 3) return pt3 !== 8;
+        if (bt === 4) return pt3 >= 2 && pt3 <= 7;
+        if (bt === 5) return pt3 >= 4 && pt3 <= 7;
+        if (bt === 6) return pt3 === 6 || pt3 === 7;
+        return false;
+      };
+
+      const bankerCardRequired = bankerNeedsCard();
+      const bankerCardValid = !bankerCardRequired || (bankerCardRequired && b3 !== "");
+
+      // Player decision
+      resultDiv.innerHTML += `<div class="decision">
+        <div class="decision-title">Player Decision</div>
+        <div class="decision-content">
+          <span class="player">Player Total: ${pTotal} → ${playerNeedsCard ? "Draws third card" : "Stands"}</span>
+          ${playerNeedsCard && p3 ? `<br>Player draws: ${p3}` : ''}
+        </div>
+        </div>`;
+
+      // Update scores after potential player draw
+      if (playerNeedsCard && p3) {
+        const playerCurrent = (pTotal + parseInt(p3)) % 10;
+        updateScores(playerCurrent, bTotal);
+      }
+
+      // Banker decision with detailed rules
+      let bankerRule = "";
+      let bankerAction = "";
+      
+      if (!playerNeedsCard) {
+        // Player stands
+        if (bTotal <= 5) {
+          bankerRule = "Banker draws (Player stood, Banker total ≤5)";
+          bankerAction = `<span class="banker">Banker ${b3 ? `draws: ${b3}` : 'needs to draw'}</span>`;
+        } else {
+          bankerRule = "Banker stands (Player stood, Banker total ≥6)";
+          bankerAction = '<span class="banker">Banker stands</span>';
+        }
+      } else {
+        // Player draws
+        const bt = bTotal;
+        if (bt <= 2) {
+          bankerRule = "Banker always draws when total is 0-2";
+          bankerAction = `<span class="banker">Banker draws: ${b3 || '(needs value)'}</span>`;
+        } else if (bt === 3) {
+          if (pt3 === null) {
+            bankerRule = `<span class="depends">Depends on Player's 3rd card (draws unless Player's 3rd card is 8)</span>`;
+            bankerAction = '<span class="banker">Awaiting Player\'s 3rd card</span>';
+          } else {
+            bankerRule = pt3 !== 8 ? "Banker draws (Player's third card is not 8)" : "Banker stands (Player's third card is 8)";
+            bankerAction = pt3 !== 8 ? `<span class="banker">Banker ${b3 ? `draws: ${b3}` : 'needs to draw'}</span>` : '<span class="banker">Banker stands</span>';
+          }
+        } else if (bt === 4) {
+          if (pt3 === null) {
+            bankerRule = `<span class="depends">Depends on Player's 3rd card (draws if Player's card is 2-7)</span>`;
+            bankerAction = '<span class="banker">Awaiting Player\'s 3rd card</span>';
+          } else {
+            bankerRule = (pt3 >= 2 && pt3 <= 7) ? `Banker draws (Player's third card is ${pt3}, between 2-7)` : "Banker stands";
+            bankerAction = (pt3 >= 2 && pt3 <= 7) ? `<span class="banker">Banker ${b3 ? `draws: ${b3}` : 'needs to draw'}</span>` : '<span class="banker">Banker stands</span>';
+          }
+        } else if (bt === 5) {
+          if (pt3 === null) {
+            bankerRule = `<span class="depends">Depends on Player's 3rd card (draws if Player's card is 4-7)</span>`;
+            bankerAction = '<span class="banker">Awaiting Player\'s 3rd card</span>';
+          } else {
+            bankerRule = (pt3 >= 4 && pt3 <= 7) ? `Banker draws (Player's third card is ${pt3}, between 4-7)` : "Banker stands";
+            bankerAction = (pt3 >= 4 && pt3 <= 7) ? `<span class="banker">Banker ${b3 ? `draws: ${b3}` : 'needs to draw'}</span>` : '<span class="banker">Banker stands</span>';
+          }
+        } else if (bt === 6) {
+          if (pt3 === null) {
+            bankerRule = `<span class="depends">Depends on Player's 3rd card (draws if Player's card is 6-7)</span>`;
+            bankerAction = '<span class="banker">Awaiting Player\'s 3rd card</span>';
+          } else {
+            bankerRule = (pt3 === 6 || pt3 === 7) ? `Banker draws (Player's third card is ${pt3}, either 6 or 7)` : "Banker stands";
+            bankerAction = (pt3 === 6 || pt3 === 7) ? `<span class="banker">Banker ${b3 ? `draws: ${b3}` : 'needs to draw'}</span>` : '<span class="banker">Banker stands</span>';
+          }
+        } else {
+          bankerRule = "Banker stands (total 7 or no draw condition met)";
+          bankerAction = '<span class="banker">Banker stands</span>';
+        }
+      }
+
+      resultDiv.innerHTML += `<div class="decision">
+        <div class="decision-title">Banker Decision</div>
+        <div class="decision-content">
+          <span class="banker">Banker Total: ${bTotal}</span><br>
+          ${bankerRule}<br>
+          ${bankerAction}
+        </div>
+        </div>`;
+
+      // Update scores after potential banker draw
+      if (bankerCardRequired && b3) {
+        const playerCurrent = (pTotal + (playerNeedsCard ? parseInt(p3) : 0)) % 10;
+        const bankerCurrent = (bTotal + parseInt(b3)) % 10;
+        updateScores(playerCurrent, bankerCurrent);
+      }
+
+      if (!playerCardValid || !bankerCardValid) {
+        resultDiv.innerHTML += `<div class="warning">⚠️ Please input required third card(s) before resolving.</div>`;
+        return;
+      }
+
+      const finalPlayer = (pTotal + (playerNeedsCard ? parseInt(p3) : 0)) % 10;
+      const finalBanker = (bTotal + (bankerCardRequired ? parseInt(b3) : 0)) % 10;
+
+      showFinalResult(finalPlayer, finalBanker);
+    });
+
+    function showFinalResult(finalPlayer, finalBanker) {
+      const resultDiv = document.getElementById("result");
+
+      resultDiv.innerHTML += `<div class="decision">
+        <div class="decision-title">Final Totals</div>
+        <div class="decision-content">
+          <span class="player">Player: ${finalPlayer}</span><br>
+          <span class="banker">Banker: ${finalBanker}</span>
+        </div>
+        </div>`;
+
+      // Update scores with final colors and highlight winner
+      updateScores(finalPlayer, finalBanker, true);
+
+      if (finalPlayer > finalBanker) {
+        resultDiv.innerHTML += `<div class="winner">🎉 <span class="player">Player Wins!</span></div>`;
+      } else if (finalBanker > finalPlayer) {
+        resultDiv.innerHTML += `<div class="winner">🏦 <span class="banker">Banker Wins!</span></div>`;
+      } else {
+        resultDiv.innerHTML += `<div class="winner">🤝 It's a Tie!</div>`;
+      }
+    }
+
+    function resetForm() {
+      document.getElementById("baccaratForm").reset();
+      document.getElementById("result").innerHTML = "";
+      updateScores(0, 0);
+    }
+  </script>
+
+</body>
+</html>
